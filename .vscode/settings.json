@@ -1,0 +1,9 @@
+{
+    "java.project.sourcePaths": ["src"],
+    "java.project.outputPath": "bin",
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "c:\\Users\\dyanc\\Downloads\\json-simple-1.1.1.jar",
+        "c:\\Users\\dyanc\\Downloads\\gson-2.8.5.jar"
+    ]
+}
