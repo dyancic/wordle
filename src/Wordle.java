@@ -5,6 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.sound.sampled.SourceDataLine;
+
 import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
 
@@ -28,57 +32,62 @@ public class Wordle {
         String[] result = new String[5];
         String resultString = "";
         
-        //1. check for ticks
+        //1. check for ticks    
+        //2. check for in the word but wrong position and wrong letters
         for (int i=0;i<5;i++) {
             if (inputList.get(i).equals(answerList.get(i))) {
                 result[i] = ANSI_GREEN + inputList.get(i) + ANSI_RESET;
+                continue;
             }
-        }
-        
-        //2. check for in the word but wrong position
-        for (int i=0;i<5;i++) {
-            if (result[i] != null) continue;
 
             String testLetter = inputList.get(i);
-            List<String> filteredAnswers = answerList.stream()
+            ArrayList<String> filteredAnswer = answerList.stream()
                 .filter(c -> c.equals(testLetter))
-                .collect(Collectors.toList());
-
-            if (filteredAnswers.size() > 0) {
-                result[i] = ANSI_YELLOW + inputList.get(i) + ANSI_RESET;
+                .collect(Collectors.toCollection(ArrayList::new));
+            if (!filteredAnswer.isEmpty()) {
+                result[i] = ANSI_YELLOW + testLetter + ANSI_RESET;
             } else {
-                result[i] = ANSI_RED + inputList.get(i) + ANSI_RESET;
-            }
-            //need more logic here for duplicates
+                result[i] = ANSI_RED + testLetter + ANSI_RESET;
+            } 
         }
-        
-        //3. return string to get displayed in the console
+
+        // 3.filtering through the results array to check for duplicate yellows and greens
+        for (int i=0;i<5;i++) {
+            String testLetter = inputList.get(i);
+
+            long answerCount = answerList.stream()
+                .filter(c -> c.equals(testLetter))
+                .count();
+
+            long inputCount = inputList.stream()
+                .filter(c -> c.equals(testLetter))
+                .count();
+
+            long count = answerCount - Stream.of(result)
+                .filter(c -> c != null ? c.equals(ANSI_GREEN + testLetter + ANSI_RESET) : false).count();
+            
+            if (answerCount < inputCount && i == inputList.lastIndexOf(testLetter)) {
+                for (int j=0; j<5; j++) {
+                    if (count <= 0 && result[j].equals(ANSI_YELLOW + testLetter + ANSI_RESET)) {
+                        result[j] = testLetter;
+                    }
+                    if (result[j].equals(ANSI_YELLOW + testLetter + ANSI_RESET)) {
+                        --count;
+                    }
+                }
+            }
+        }
+
+        //4. return string to get displayed in the console
         for (String r: result) {
             resultString += r;
         }
+        
         gameData.add(resultString);
         return resultString;
     }
 
     public static void resetGame() {
         gameData.removeAll(gameData);
-    }
-
-    public static String getWord() {
-        try {
-            JSONParser parser = new JSONParser();
-            JSONArray arr = (JSONArray) parser.parse(new FileReader("./resources/word-list.json"));
-            ArrayList<String> wordList = new Gson().fromJson(arr.toString(), new TypeToken<List<String>>(){}.getType());
-            Random r = new Random();
-            int random = r.nextInt(wordList.size());
-            return wordList.get(random);
-        } catch (Exception e){
-            e.printStackTrace();
-        }
-        return "throw";
-    }
-
-    public static String saveGame() {
-        
     }
 }
